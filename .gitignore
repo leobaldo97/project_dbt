@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# dbt Core
+dbt_packages/
+logs/
+profiles.yml
+
+# Additional environment files
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
