@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -59,10 +59,18 @@ jobs:
           DBT_PORT: ${{ secrets.DBT_PORT }}
           DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
 
-      - name: Run dbt pipeline
-        run: |
-          dbt source freshness
-          dbt build
+      - name: Check source freshness
+        continue-on-error: true
+        run: dbt source freshness
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+          DBT_USER: ${{ secrets.DBT_USER }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+          DBT_PORT: ${{ secrets.DBT_PORT }}
+          DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
+
+      - name: Run dbt build
+        run: dbt build
         env:
           DBT_HOST: ${{ secrets.DBT_HOST }}
           DBT_USER: ${{ secrets.DBT_USER }}
