@@ -1,0 +1,52 @@
+
+version: 2
+
+models:
+  - name: fct_orders
+    description: "Fact table containing one record per e-commerce order, enriched with aggregated item quantities and monetary totals. Includes completed, pending, and cancelled orders."
+    columns:
+      - name: order_id
+        description: "Unique, non-null identifier of each order."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: customer_id
+        description: "Identifier of the customer who placed the order. Must reference an existing customer in stg_customers."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+
+      - name: order_status
+        description: "Standardized order lifecycle status. Accepted values are completed, pending, and cancelled."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'pending', 'cancelled']
+
+  - name: dim_customers
+    description: "Customer dimension containing one record per customer, enriched with purchase metrics calculated exclusively from completed orders. Customers without completed orders are retained with zero-valued metrics."
+    columns:
+      - name: customer_id
+        description: "Unique, non-null identifier of each customer."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: total_orders
+        description: "Number of completed orders placed by the customer. Returns zero when no completed orders exist."
+        data_tests:
+          - not_null
+
+      - name: total_spent
+        description: "Total monetary value of all completed orders placed by the customer. Returns zero when no completed orders exist."
+        data_tests:
+          - not_null
+
+      - name: avg_order_value
+        description: "Average monetary value per completed order, rounded to two decimal places. Returns zero when no completed orders exist."
+        data_tests:
+          - not_null

@@ -1,0 +1,71 @@
+name: dbt Analytics Pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  dbt-pipeline:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ecommerce_analytics
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install dbt-core==1.12.6 dbt-postgres==1.11.0
+
+      - name: Configure dbt profile
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+          DBT_USER: ${{ secrets.DBT_USER }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+          DBT_PORT: ${{ secrets.DBT_PORT }}
+          DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          ecommerce_analytics:
+            target: dev
+            outputs:
+              dev:
+                type: postgres
+                host: "{{ env_var('DBT_HOST') }}"
+                user: "{{ env_var('DBT_USER') }}"
+                password: "{{ env_var('DBT_PASSWORD') }}"
+                port: "{{ env_var('DBT_PORT') | int }}"
+                dbname: "{{ env_var('DBT_DBNAME') }}"
+                schema: analytics
+                threads: 4
+                sslmode: require
+          EOF
+
+      - name: Check database connection
+        run: dbt debug
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+          DBT_USER: ${{ secrets.DBT_USER }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+          DBT_PORT: ${{ secrets.DBT_PORT }}
+          DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
+
+      - name: Run dbt pipeline
+        run: |
+          dbt source freshness
+          dbt build
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+          DBT_USER: ${{ secrets.DBT_USER }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+          DBT_PORT: ${{ secrets.DBT_PORT }}
+          DBT_DBNAME: ${{ secrets.DBT_DBNAME }}

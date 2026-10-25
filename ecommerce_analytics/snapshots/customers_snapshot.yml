@@ -1,0 +1,17 @@
+
+version: 2
+
+snapshots:
+  - name: customers_snapshot
+    description: "Tracks historical changes to customer email addresses and countries using a Slowly Changing Dimension Type 2 approach."
+
+    relation: ref('stg_customers')
+
+    config:
+      schema: snapshots
+      unique_key: customer_id
+      strategy: check
+      check_cols:
+        - email
+        - country
+      hard_deletes: ignore

@@ -1,0 +1,65 @@
+
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Staging model containing customer information sourced from the e-commerce database. Preserves one record per customer."
+    columns:
+      - name: customer_id
+        description: "Unique, non-null identifier assigned to each customer."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_orders
+    description: "Staging model containing e-commerce orders, with standardized order status values. Preserves one record per order, including completed, pending, and cancelled orders."
+    columns:
+      - name: customer_id
+        description: "Non-null identifier of the customer who placed the order. Must reference an existing customer in stg_customers."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+
+      - name: order_id
+        description: "Unique, non-null identifier assigned to each order."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_status
+        description: "Standardized lifecycle status of the order. Permitted values are completed, pending, and cancelled."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'pending', 'cancelled']
+
+  - name: stg_order_items
+    description: "Staging model containing individual products associated with customer orders. Preserves one record per order line and calculates the line total as quantity multiplied by unit price."
+    columns:
+      - name: order_item_id
+        description: "Unique, non-null identifier assigned to each order line item."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: quantity
+        description: "Number of units purchased for the corresponding order line item. Must not be null."
+        data_tests:
+          - not_null
+
+      - name: unit_price
+        description: "Price per unit of the product, expressed in the source currency. Must not be null."
+        data_tests:
+          - not_null
+
+      - name: order_id
+        description: "Non-null identifier of the order associated with this line item. Must reference an existing order in stg_orders."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
